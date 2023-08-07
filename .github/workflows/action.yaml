@@ -60,7 +60,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: zip-bundle-lambda
-      - name: Configure Credentials - AWS
+      - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -69,11 +69,36 @@ jobs:
       - name: Upload Artifact to S3
         run: aws s3 cp ${{ github.sha }}.zip s3://github-actions-deploy-lambda/${{ github.repository }}/${{ github.sha }}.zip
 
-  deploy:
+  test:
     runs-on: ubuntu-20.04
     needs: upload
     steps:
-      - name: Configure Credentials - AWS
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: 'us-east-1'
+      - name: Create Test Function
+        run: |
+          aws lambda create-function --function-name test-function-${{ matrix.input }} \
+          --payload $(echo "{\"input\": \"${{ matrix.input }}\"}" | base64) \
+          --output json out
+          if grep -q "Error" out; then
+            exit1
+          fi
+      - name: Test Placeholder
+        run: sleep 60
+      - name: Destroy Test Function
+        if: ${{ always() }}
+        run: |
+          aws lambda delete-function --function-name test-function-${{ matrix.input }}
+
+  deploy:
+    runs-on: ubuntu-20.04
+    needs: test
+    steps:
+      - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
