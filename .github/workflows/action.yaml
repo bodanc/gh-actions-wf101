@@ -61,7 +61,7 @@ jobs:
       - name: Update Lambda Function Code
         run: |
           aws lambda update-function-code \
-          --function-name github-actions \
+          --function-name github-actions-2 \
           --s3-bucket github-actions-deploy-lambda \
           --s3-key ${{ github.repository }}/${{ github.sha }}.zip \
           --publish
