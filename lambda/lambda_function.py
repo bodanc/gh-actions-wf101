@@ -2,7 +2,7 @@ from github import Github
 
 
 def lambda_handler(event, context):
-    """Wrapper for a lambda function
+    """Wrapper for a very basic lambda function
     Args:
         event: trigger event dict
         context: lambda methods and properties
